@@ -43,30 +43,33 @@ class AuthController extends Controller
     ], 201);
 }
     public function loginApi(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|string|email',
-        'password' => 'required|string',
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
 
-    if ($validator->fails()) {
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // Generate Sanctum token
+        $token = $user->createToken('authToken')->plainTextToken;
+
         return response()->json([
-            'message' => $validator->errors()->first()
-        ], 422);
+            'message' => 'Logged in successfully',
+            'user' => $user,
+            'token' => $token
+        ], 200);
     }
-
-    $user = User::where('email', $request->email)->first();
-
-    if (!$user || !Hash::check($request->password, $user->password)) {
-        return response()->json([
-            'message' => 'Invalid credentials'
-        ], 401);
-    }
-
-    return response()->json([
-        'message' => 'Logged in successfully',
-        'user' => $user,
-    ], 200);
-
 }
-}s
